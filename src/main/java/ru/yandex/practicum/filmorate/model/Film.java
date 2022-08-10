@@ -1,19 +1,26 @@
 package ru.yandex.practicum.filmorate.model;
 
 import lombok.Data;
-import lombok.NonNull;
 
+import javax.validation.constraints.*;
 import java.time.LocalDate;
 
 @Data
 public class Film {
     private int id;
-    @NonNull
+
+    @NotBlank(message = "Film name should not be blank or null")
     private String name;
-    @NonNull
+
+    @NotBlank(message = "Film description should not be blank or null")
+    @Size(max = 200, message = "Max size of description should be 200 chars")
     private String description;
-    @NonNull
+
+    @NotNull(message = "Film release date should not be null")
     private LocalDate releaseDate;
-    @NonNull
-    private Integer duration;
+
+    @Positive(message = "Film duration should be positive")
+    private int duration;
+
+
 }

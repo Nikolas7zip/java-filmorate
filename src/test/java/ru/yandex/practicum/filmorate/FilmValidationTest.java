@@ -1,78 +1,72 @@
 package ru.yandex.practicum.filmorate;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.FilmController;
-import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FilmValidationTest {
+    private final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    private final Validator validator = factory.getValidator();
+    private Film film;
 
-    @Test
-    public void shouldNotThrowExceptionOnCorrectFilm() {
-        Film film = new Film("Inception",  "Short description", LocalDate.of(2010, 7, 22), 148);
-        assertDoesNotThrow(() -> {
-            FilmController.validate(film);
-        });
+    @BeforeEach
+    public void beforeEach() {
+        film = new Film();
+        film.setName("Inception");
+        film.setDescription("Short description");
+        film.setReleaseDate(LocalDate.of(2010, 7, 22));
+        film.setDuration(148);
     }
 
     @Test
-    public void shouldThrowNullPointerExceptionForNullName() {
-        final NullPointerException ex = assertThrows(
-                NullPointerException.class,
+    public void shouldBeCorrectFilm() {
+        assertEquals(0, validator.validate(film).size());
+    }
+
+    @Test
+    public void shouldCheckNullName() {
+        film.setName(null);
+        assertEquals(1, validator.validate(film).size());
+    }
+
+    @Test
+    public void shouldCheckEmptyName() {
+        film.setName(" ");
+        assertEquals(1, validator.validate(film).size());
+    }
+
+    @Test
+    public void shouldThrowExceptionForEarlyReleaseDate() {
+        film.setReleaseDate(LocalDate.of(1895, 12, 27));
+        FilmController controller = new FilmController();
+        final BadRequestException ex = assertThrows(
+                BadRequestException.class,
                 () -> {
-                    Film film = new Film(null,  "Short description", LocalDate.of(2010, 7, 22), 148);
+                    controller.throwIfReleaseDateNotValid(film);
                 });
     }
 
     @Test
-    public void shouldThrowValidationExceptionForEmptyName() {
-        Film film = new Film("", "Description", LocalDate.now(), 120);
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    FilmController.validate(film);
-                });
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionForEarlyReleaseDate() {
-        Film film = new Film("Inception", "Description", LocalDate.of(1850, 1, 10), 120);
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    FilmController.validate(film);
-                });
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionForLongDescription() {
+    public void shouldCheckLongDescription() {
         String longDescription = "A thief who steals corporate secrets through the use of " +
                 "dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O., " +
                 "but his tragic past may doom the project and his team to disaster.";
-        Film film = new Film("Inception", longDescription, LocalDate.of(2010, 7, 22), 148);
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    FilmController.validate(film);
-                });
+        film.setDescription(longDescription);
+        assertEquals(1, validator.validate(film).size());
     }
 
     @Test
-    public void shouldThrowValidationExceptionForNegativeDuration() {
-        Film film = new Film("Inception",  "Short description", LocalDate.of(2010, 7, 22), -1);
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    FilmController.validate(film);
-                });
+    public void shouldCheckNegativeDuration() {
+        film.setDuration(-1);
+        assertEquals(1, validator.validate(film).size());
     }
 }

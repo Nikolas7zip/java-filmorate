@@ -1,98 +1,82 @@
 package ru.yandex.practicum.filmorate;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
+import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UserValidationTest {
+    private final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    private final Validator validator = factory.getValidator();
 
-    @Test
-    public void shouldNotThrowExceptionOnCorrectUser() {
-        User user = new User("tester@mail.ru", "Tester", LocalDate.of(1992, 5, 13));
+    private User user;
 
-        assertDoesNotThrow(() -> {
-            UserController.validate(user);
-        });
+    @BeforeEach
+    public void beforeEach() {
+        user = new User();
+        user.setEmail("tester@mail.ru");
+        user.setLogin("Tester");
+        user.setBirthday(LocalDate.of(1992, 5, 13));
     }
 
     @Test
-    public void shouldThrowNullPointerExceptionForNullEmail() {
-        final NullPointerException ex = assertThrows(
-                NullPointerException.class,
+    public void shouldBeCorrectUser() {
+        assertEquals(0, validator.validate(user).size());
+    }
+
+    @Test
+    public void shouldCheckNullEmail() {
+        user.setEmail(null);
+        assertEquals(1, validator.validate(user).size());
+    }
+
+    @Test
+    public void shouldCheckEmptyEmail() {
+        user.setEmail("");
+        assertEquals(1, validator.validate(user).size());
+    }
+
+    @Test
+    public void shouldCheckWrongEmail() {
+        user.setEmail("tester-mail.ru");
+        assertEquals(1, validator.validate(user).size());
+    }
+
+    @Test
+    public void shouldCheckEmailWithoutPrefix() {
+        user.setEmail("@mail.ru");
+        assertEquals(1, validator.validate(user).size());
+    }
+
+    @Test
+    public void shouldCheckEmptyLogin() {
+        user.setLogin("");
+        assertEquals(1, validator.validate(user).size());
+    }
+
+    @Test
+    public void shouldThrowExceptionForLoginWithSpaces() {
+        user.setLogin("Tester Cool");
+        UserController controller = new UserController();
+        final BadRequestException ex = assertThrows(
+                BadRequestException.class,
                 () -> {
-                    User user = new User(null, "Tester", LocalDate.of(1992, 5, 13));
+                    controller.throwIfLoginNotValid(user);
                 });
     }
 
     @Test
-    public void shouldThrowValidationExceptionForEmptyEmail() {
-        User user = new User("", "Tester", LocalDate.of(1992, 5, 13));
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    UserController.validate(user);
-                });
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionForWrongEmail() {
-        User user = new User("tester-mail.ru", "Tester", LocalDate.of(1992, 5, 13));
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    UserController.validate(user);
-                });
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionForEmailWithoutPrefix() {
-        User user = new User("@mail.ru", "Tester", LocalDate.of(1992, 5, 13));
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    UserController.validate(user);
-                });
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionForEmptyLogin() {
-        User user = new User("tester@mail.ru", "", LocalDate.of(1992, 5, 13));
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    UserController.validate(user);
-                });
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionForLoginWithSpaces() {
-        User user = new User("tester@mail.ru", "Tester Cool", LocalDate.of(1992, 5, 13));
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    UserController.validate(user);
-                });
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionForFutureBirthday() {
-        User user = new User("tester@mail.ru", "Tester", LocalDate.of(2023, 1, 1));
-
-        final ValidationException ex = assertThrows(
-                ValidationException.class,
-                () -> {
-                    UserController.validate(user);
-                });
+    public void shouldCheckFutureBirthday() {
+        user.setBirthday(LocalDate.of(2023, 1, 1));
+        assertEquals(1, validator.validate(user).size());
     }
 }
