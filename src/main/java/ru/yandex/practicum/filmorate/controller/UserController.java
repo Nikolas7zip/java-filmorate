@@ -28,26 +28,30 @@ public class UserController {
     @PostMapping
     public User create(@Valid @RequestBody User newUser) throws BadRequestException {
         throwIfLoginNotValid(newUser);
+
         changeBlankNameToLogin(newUser);
         newUser.setId(++id);
         users.put(id, newUser);
         log.info("Success create {}", newUser);
+
         return newUser;
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User updatedUser) throws ResourceNotFoundException, BadRequestException {
         int userId = updatedUser.getId();
-        if (users.containsKey(userId)) {
-            throwIfLoginNotValid(updatedUser);
-            changeBlankNameToLogin(updatedUser);
-            users.put(userId, updatedUser);
-            log.info("Success update {}", updatedUser);
-        } else {
+        if (!users.containsKey(userId)) {
             String warningMessage = "Not found user with id " + userId;
             log.warn(warningMessage);
             throw new ResourceNotFoundException(warningMessage);
         }
+
+        throwIfLoginNotValid(updatedUser);
+
+        changeBlankNameToLogin(updatedUser);
+        users.put(userId, updatedUser);
+        log.info("Success update {}", updatedUser);
+
         return updatedUser;
     }
 

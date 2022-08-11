@@ -27,24 +27,28 @@ public class FilmController {
     @PostMapping
     public Film create(@Valid @RequestBody Film newFilm) throws BadRequestException {
         throwIfReleaseDateNotValid(newFilm);
+
         newFilm.setId(++id);
         films.put(id, newFilm);
         log.info("Success create {}", newFilm);
+
         return newFilm;
     }
 
     @PutMapping
     public Film update(@Valid @RequestBody Film updatedFilm) throws ResourceNotFoundException, BadRequestException {
         int filmId = updatedFilm.getId();
-        if (films.containsKey(filmId)) {
-            throwIfReleaseDateNotValid(updatedFilm);
-            films.put(filmId, updatedFilm);
-            log.info("Success update {}", updatedFilm);
-        } else {
+        if (!films.containsKey(filmId)) {
             String warningMessage = "Not found film with id " + filmId;
             log.warn(warningMessage);
             throw new ResourceNotFoundException(warningMessage);
         }
+
+        throwIfReleaseDateNotValid(updatedFilm);
+
+        films.put(filmId, updatedFilm);
+        log.info("Success update {}", updatedFilm);
+
         return updatedFilm;
     }
 
