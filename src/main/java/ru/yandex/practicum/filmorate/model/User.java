@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
 import lombok.Data;
+import ru.yandex.practicum.filmorate.validation.UserLogin;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
@@ -17,6 +18,7 @@ public class User {
     private String email;
 
     @NotBlank(message = "User login should not be blank or null")
+    @UserLogin
     private String login;
 
     private String name;

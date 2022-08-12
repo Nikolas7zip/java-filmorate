@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
 import java.util.*;
 
 
@@ -15,7 +14,6 @@ import java.util.*;
 @RequestMapping("/films")
 @Slf4j
 public class FilmController {
-    private final LocalDate cinemaBirthday = LocalDate.of(1895, 12, 28);
     private final Map<Integer, Film> films = new HashMap<>();
     private int id = 0;
 
@@ -26,8 +24,6 @@ public class FilmController {
 
     @PostMapping
     public Film create(@Valid @RequestBody Film newFilm) throws BadRequestException {
-        throwIfReleaseDateNotValid(newFilm);
-
         newFilm.setId(++id);
         films.put(id, newFilm);
         log.info("Success create {}", newFilm);
@@ -43,20 +39,9 @@ public class FilmController {
             log.warn(warningMessage);
             throw new ResourceNotFoundException(warningMessage);
         }
-
-        throwIfReleaseDateNotValid(updatedFilm);
-
         films.put(filmId, updatedFilm);
         log.info("Success update {}", updatedFilm);
 
         return updatedFilm;
-    }
-
-    public void throwIfReleaseDateNotValid(final Film film) throws BadRequestException {
-        if (cinemaBirthday.isAfter(film.getReleaseDate())) {
-            String warningMessage = "Wrong film release date (before cinema birthday): " + film.getReleaseDate();
-            log.warn(warningMessage);
-            throw new BadRequestException(warningMessage);
-        }
     }
 }

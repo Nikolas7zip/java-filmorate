@@ -2,8 +2,6 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.controller.FilmController;
-import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import javax.validation.Validation;
@@ -45,14 +43,9 @@ public class FilmValidationTest {
     }
 
     @Test
-    public void shouldThrowExceptionForEarlyReleaseDate() {
+    public void shouldCheckEarlyReleaseDate() {
         film.setReleaseDate(LocalDate.of(1895, 12, 27));
-        FilmController controller = new FilmController();
-        final BadRequestException ex = assertThrows(
-                BadRequestException.class,
-                () -> {
-                    controller.throwIfReleaseDateNotValid(film);
-                });
+        assertEquals(1, validator.validate(film).size());
     }
 
     @Test

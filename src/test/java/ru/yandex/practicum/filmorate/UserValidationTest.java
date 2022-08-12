@@ -2,8 +2,6 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.controller.UserController;
-import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import javax.validation.Validation;
@@ -64,14 +62,9 @@ public class UserValidationTest {
     }
 
     @Test
-    public void shouldThrowExceptionForLoginWithSpaces() {
+    public void shouldCheckLoginWithSpaces() {
         user.setLogin("Tester Cool");
-        UserController controller = new UserController();
-        final BadRequestException ex = assertThrows(
-                BadRequestException.class,
-                () -> {
-                    controller.throwIfLoginNotValid(user);
-                });
+        assertEquals(1, validator.validate(user).size());
     }
 
     @Test

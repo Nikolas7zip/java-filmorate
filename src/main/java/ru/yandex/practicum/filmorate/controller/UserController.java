@@ -27,8 +27,6 @@ public class UserController {
 
     @PostMapping
     public User create(@Valid @RequestBody User newUser) throws BadRequestException {
-        throwIfLoginNotValid(newUser);
-
         changeBlankNameToLogin(newUser);
         newUser.setId(++id);
         users.put(id, newUser);
@@ -45,22 +43,11 @@ public class UserController {
             log.warn(warningMessage);
             throw new ResourceNotFoundException(warningMessage);
         }
-
-        throwIfLoginNotValid(updatedUser);
-
         changeBlankNameToLogin(updatedUser);
         users.put(userId, updatedUser);
         log.info("Success update {}", updatedUser);
 
         return updatedUser;
-    }
-
-    public void throwIfLoginNotValid(User user) throws BadRequestException {
-        if (user.getLogin().contains(" ")) {
-            String warningMessage = "User login contains spaces: " + user.getLogin();
-            log.warn(warningMessage);
-            throw new BadRequestException(warningMessage);
-        }
     }
 
     private void changeBlankNameToLogin(User user) {

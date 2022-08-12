@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import ru.yandex.practicum.filmorate.validation.FilmDate;
 import lombok.Data;
 
 import javax.validation.constraints.*;
@@ -17,6 +18,7 @@ public class Film {
     private String description;
 
     @NotNull(message = "Film release date should not be null")
+    @FilmDate
     private LocalDate releaseDate;
 
     @Positive(message = "Film duration should be positive")
