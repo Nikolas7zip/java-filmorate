@@ -1,10 +1,9 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import lombok.extern.slf4j.Slf4j;
-import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
-import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
 import java.util.*;
@@ -12,36 +11,48 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/films")
-@Slf4j
 public class FilmController {
-    private final Map<Integer, Film> films = new HashMap<>();
-    private int id = 0;
+    private final FilmService filmService;
+
+    @Autowired
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
+    }
 
     @GetMapping
-    public List<Film> getAll() {
-        return new ArrayList<>(films.values());
+    public List<Film> getAllFilms() {
+        return filmService.getAllFilms();
+    }
+
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable Integer id) {
+        return filmService.getFilmById(id);
+    }
+
+    @GetMapping("/popular")
+    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10", required = false) Integer count) {
+        return filmService.getPopularFilms(count);
     }
 
     @PostMapping
-    public Film create(@Valid @RequestBody Film newFilm) throws BadRequestException {
-        newFilm.setId(++id);
-        films.put(id, newFilm);
-        log.info("Success create {}", newFilm);
-
-        return newFilm;
+    public Film createFilm(@Valid @RequestBody Film newFilm) {
+        return filmService.createFilm(newFilm);
     }
 
     @PutMapping
-    public Film update(@Valid @RequestBody Film updatedFilm) throws ResourceNotFoundException, BadRequestException {
-        int filmId = updatedFilm.getId();
-        if (!films.containsKey(filmId)) {
-            String warningMessage = "Not found film with id " + filmId;
-            log.warn(warningMessage);
-            throw new ResourceNotFoundException(warningMessage);
-        }
-        films.put(filmId, updatedFilm);
-        log.info("Success update {}", updatedFilm);
+    public Film updateFilm(@Valid @RequestBody Film updatedFilm) {
+        return filmService.updateFilm(updatedFilm);
+    }
 
-        return updatedFilm;
+    @PutMapping("/{id}/like/{userId}")
+    public void likeFilmByUser(@PathVariable("id") Integer filmId,
+                               @PathVariable("userId") Integer userId) {
+        filmService.likeFilmByUser(filmId, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public void removeLikeFromFilmByUser(@PathVariable("id") Integer filmId,
+                                         @PathVariable("userId") Integer userId) {
+        filmService.removeLikeFromFilmByUser(filmId, userId);
     }
 }

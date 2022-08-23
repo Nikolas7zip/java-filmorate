@@ -23,6 +23,4 @@ public class Film {
 
     @Positive(message = "Film duration should be positive")
     private int duration;
-
-
 }
