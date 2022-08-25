@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.*;
@@ -9,7 +8,6 @@ import java.util.*;
 @Component
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Integer, User> users = new HashMap<>();
-    private final Map<Integer, Set<Integer>> friends = new HashMap<>();
     private int id = 0;
 
     @Override
@@ -39,41 +37,5 @@ public class InMemoryUserStorage implements UserStorage {
         }
 
         return null;
-    }
-
-    @Override
-    public Set<Integer> getFriendsId(Integer id) {
-        if (friends.containsKey(id)) {
-            return new HashSet<>(friends.get(id));
-        }
-
-        return null;
-    }
-
-    @Override
-    public void addToFriends(Integer targetId, Integer friendId) {
-        if (friends.containsKey(targetId)) {
-            friends.get(targetId).add(friendId);
-        } else {
-            Set<Integer> setFriends = new HashSet<>();
-            setFriends.add(friendId);
-            friends.put(targetId, setFriends);
-        }
-    }
-
-    @Override
-    public boolean removeFromFriends(Integer targetId, Integer friendId) {
-        if (friends.containsKey(targetId)) {
-            return friends.get(targetId).remove(friendId);
-        }
-
-        return false;
-    }
-
-    @Override
-    public void throwIfNotFound(Integer id) throws ResourceNotFoundException {
-        if (!users.containsKey(id)) {
-            throw new ResourceNotFoundException("Not found user with id " + id);
-        }
     }
 }

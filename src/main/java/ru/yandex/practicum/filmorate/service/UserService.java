@@ -24,13 +24,17 @@ public class UserService {
     }
 
     public User getUserById(Integer userId) throws ResourceNotFoundException {
-        userStorage.throwIfNotFound(userId);
+        User user = userStorage.getById(userId);
+        if (user == null) {
+            throw new ResourceNotFoundException("Not found user with id " + userId);
+        }
 
-        return userStorage.getById(userId);
+        return user;
     }
 
     public User createUser(User user) {
         changeBlankNameToLogin(user);
+        setEmptyFriendsSetIfNull(user);
         User userFromStorage = userStorage.add(user);
         log.info("Success create {}", userFromStorage);
 
@@ -38,8 +42,9 @@ public class UserService {
     }
 
     public User updateUser(User user) throws ResourceNotFoundException {
-        userStorage.throwIfNotFound(user.getId());
+        getUserById(user.getId());      // check user is existed
         changeBlankNameToLogin(user);
+        setEmptyFriendsSetIfNull(user);
         User userFromStorage = userStorage.update(user);
         log.info("Success update {}", userFromStorage);
 
@@ -47,24 +52,24 @@ public class UserService {
     }
 
     public List<User> getUserFriends(Integer userId) throws ResourceNotFoundException {
-        userStorage.throwIfNotFound(userId);
+        User user = getUserById(userId);
 
-        return collectFriendsToList(userStorage.getFriendsId(userId));
+        return collectFriendsToList(user.getFriends());
     }
 
     public void addUsersToFriends(Integer user1Id, Integer user2Id) throws ResourceNotFoundException {
-        userStorage.throwIfNotFound(user1Id);
-        userStorage.throwIfNotFound(user2Id);
-        userStorage.addToFriends(user1Id, user2Id);
-        userStorage.addToFriends(user2Id, user1Id);
+        User user1 = getUserById(user1Id);
+        User user2 = getUserById(user2Id);
+        user1.getFriends().add(user2Id);
+        user2.getFriends().add(user1Id);
         log.info("Add users {} and {} to friends mutually", user1Id, user2Id);
     }
 
     public void removeUsersFromFriends(Integer user1Id, Integer user2Id) throws ResourceNotFoundException {
-        userStorage.throwIfNotFound(user1Id);
-        userStorage.throwIfNotFound(user2Id);
-        boolean isRemoveFriendForUser1 = userStorage.removeFromFriends(user1Id, user2Id);
-        boolean isRemoveFriendForUser2 = userStorage.removeFromFriends(user2Id, user1Id);
+        User user1 = getUserById(user1Id);
+        User user2 = getUserById(user2Id);
+        boolean isRemoveFriendForUser1 = user1.getFriends().remove(user2Id);
+        boolean isRemoveFriendForUser2 = user2.getFriends().remove(user1Id);
         if (isRemoveFriendForUser1 && isRemoveFriendForUser2) {
             log.info("Remove users {} and {} from friends mutually", user1Id, user2Id);
         } else {
@@ -75,16 +80,18 @@ public class UserService {
 
     public List<User> findCommonFriendsBetweenTwoUsers(Integer user1Id, Integer user2Id)
             throws ResourceNotFoundException {
-        userStorage.throwIfNotFound(user1Id);
-        userStorage.throwIfNotFound(user2Id);
-        Set<Integer> friendsIdUser1 = userStorage.getFriendsId(user1Id);
-        Set<Integer> friendsIdUser2 = userStorage.getFriendsId(user2Id);
-        if (friendsIdUser1 != null && friendsIdUser2 != null) {
-            friendsIdUser1.retainAll(friendsIdUser2);
-            return collectFriendsToList(friendsIdUser1);
-        }
+        User user1 = getUserById(user1Id);
+        User user2 = getUserById(user2Id);
+        Set<Integer> friendsIdUser1 = new HashSet<>(user1.getFriends());
+        friendsIdUser1.retainAll(user2.getFriends());
 
-        return Collections.emptyList();
+        return collectFriendsToList(friendsIdUser1);
+    }
+
+    private void setEmptyFriendsSetIfNull(User user) {
+        if (user.getFriends() == null) {
+            user.setFriends(new HashSet<>());
+        }
     }
 
     private void changeBlankNameToLogin(User user) {

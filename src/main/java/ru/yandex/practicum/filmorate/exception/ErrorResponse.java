@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.practicum.filmorate.exception;
 
 import java.util.ArrayList;
 import java.util.List;

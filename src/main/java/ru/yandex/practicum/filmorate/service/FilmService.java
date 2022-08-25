@@ -3,13 +3,14 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -28,20 +29,27 @@ public class FilmService {
     }
 
     public Film getFilmById(Integer filmId) throws ResourceNotFoundException {
-        filmStorage.throwIfNotFound(filmId);
-
-        return filmStorage.getById(filmId);
-    }
-
-    public List<Film> getPopularFilms(Integer count) throws BadRequestException {
-        if (count == null || count <= 0) {
-            throw new BadRequestException("count param should be positive integer");
+        Film film = filmStorage.getById(filmId);
+        if (film == null) {
+            throw new ResourceNotFoundException("Not found film with id " + filmId);
         }
 
-        return filmStorage.getTopFilmsByLikes(count);
+        return film;
+    }
+
+    public List<Film> getPopularFilms(Integer count) {
+        return filmStorage.getAll().stream()
+                .sorted((f1, f2) -> {
+                    Integer likes1 = f1.getUserLikes().size();
+                    Integer likes2 = f2.getUserLikes().size();
+                    return likes2.compareTo(likes1); // select reverse order
+                })
+                .limit(count)
+                .collect(Collectors.toList());
     }
 
     public Film createFilm(Film film) {
+        setEmptyUserLikesSetIfNull(film);
         Film filmFromStorage = filmStorage.add(film);
         log.info("Success create {}", filmFromStorage);
 
@@ -49,7 +57,8 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) throws ResourceNotFoundException {
-        filmStorage.throwIfNotFound(film.getId());
+        getFilmById(film.getId());      // check film is existed
+        setEmptyUserLikesSetIfNull(film);
         Film filmFromStorage = filmStorage.update(film);
         log.info("Success update {}", filmFromStorage);
 
@@ -57,20 +66,30 @@ public class FilmService {
     }
 
     public void likeFilmByUser(Integer filmId, Integer userId) throws ResourceNotFoundException {
-        filmStorage.throwIfNotFound(filmId);
-        userStorage.throwIfNotFound(userId);
-        filmStorage.likeByUser(filmId, userId);
+        if (userStorage.getById(userId) == null) {
+            throw new ResourceNotFoundException("Not found user with id " + userId);
+        }
+
+        getFilmById(filmId).getUserLikes().add(userId);
         log.info("User " + userId + " liked film with id " + filmId);
     }
 
     public void removeLikeFromFilmByUser(Integer filmId, Integer userId) throws ResourceNotFoundException {
-        filmStorage.throwIfNotFound(filmId);
-        userStorage.throwIfNotFound(userId);
-        if (filmStorage.removeLikeByUser(filmId, userId)) {
+        if (userStorage.getById(userId) == null) {
+            throw new ResourceNotFoundException("Not found user with id " + userId);
+        }
+
+        if (getFilmById(filmId).getUserLikes().remove(userId)) {
             log.info("User " + userId + " remove like from film with id " + filmId);
         } else {
             throw new ResourceNotFoundException("Could not remove like from film with id " + filmId +
                     " by user " + userId);
+        }
+    }
+
+    private void setEmptyUserLikesSetIfNull(Film film) {
+        if (film.getUserLikes() == null) {
+            film.setUserLikes(new HashSet<>());
         }
     }
 }
