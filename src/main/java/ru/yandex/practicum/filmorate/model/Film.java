@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 public class Film {
@@ -24,5 +25,5 @@ public class Film {
     @Positive(message = "Film duration should be positive")
     private int duration;
 
-
+    private Set<Integer> userLikes;
 }
