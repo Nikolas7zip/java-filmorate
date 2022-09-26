@@ -20,10 +20,11 @@ public class UserValidationTest {
 
     @BeforeEach
     public void beforeEach() {
-        user = new User();
-        user.setEmail("tester@mail.ru");
-        user.setLogin("Tester");
-        user.setBirthday(LocalDate.of(1992, 5, 13));
+        user = User.builder()
+                .email("tester@mail.ru")
+                .login("Tester")
+                .birthday(LocalDate.of(1992, 5, 13))
+                .build();
     }
 
     @Test

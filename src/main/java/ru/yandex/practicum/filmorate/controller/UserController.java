@@ -9,7 +9,6 @@ import javax.validation.Valid;
 import java.util.List;
 
 
-
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -26,7 +25,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Integer id) {
+    public User getUserById(@PathVariable int id) {
         return userService.getUserById(id);
     }
 
@@ -41,25 +40,25 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    public List<User> getUserFriends(@PathVariable Integer id) {
-        return userService.getUserFriends(id);
+    public List<User> getUserFriends(@PathVariable int id) {
+        return userService.getFriends(id);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public void addUserToFriends(@PathVariable Integer id,
-                                 @PathVariable Integer friendId) {
-        userService.addUsersToFriends(id, friendId);
+    public void addUserToFriends(@PathVariable int id,
+                                 @PathVariable int friendId) {
+        userService.addToFriends(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public void removeUserFromFriends(@PathVariable Integer id,
-                                      @PathVariable Integer friendId) {
-        userService.removeUsersFromFriends(id, friendId);
+    public void removeUserFromFriends(@PathVariable int id,
+                                      @PathVariable int friendId) {
+        userService.removeFromFriends(id, friendId);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> findCommonFriendsBetweenTwoUsers(@PathVariable Integer id,
-                                                       @PathVariable Integer otherId) {
+    public List<User> findCommonFriendsBetweenTwoUsers(@PathVariable int id,
+                                                       @PathVariable int otherId) {
         return userService.findCommonFriendsBetweenTwoUsers(id, otherId);
     }
 }

@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import javax.validation.Validation;
 import javax.validation.Validator;
@@ -18,11 +19,13 @@ public class FilmValidationTest {
 
     @BeforeEach
     public void beforeEach() {
-        film = new Film();
-        film.setName("Inception");
-        film.setDescription("Short description");
-        film.setReleaseDate(LocalDate.of(2010, 7, 22));
-        film.setDuration(148);
+        film = Film.builder()
+                .name("Inception")
+                .description("Short description")
+                .releaseDate(LocalDate.of(2010, 7, 22))
+                .duration(148)
+                .mpa(new MpaRating(6, "Боевик"))
+                .build();
     }
 
     @Test

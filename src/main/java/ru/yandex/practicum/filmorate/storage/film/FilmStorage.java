@@ -6,7 +6,10 @@ import java.util.List;
 
 public interface FilmStorage {
     List<Film> getAll();
-    Film getById(Integer id);
-    Film add(Film film);
-    Film update(Film film);
+    Film getById(int id);
+    List<Film> getPopularFilms(int limitFilms);
+    int add(Film film);
+    void update(Film film);
+    boolean likeFilmByUser(int filmId, int userId);
+    boolean removeLikeFromFilmByUser(int filmId, int userId);
 }
