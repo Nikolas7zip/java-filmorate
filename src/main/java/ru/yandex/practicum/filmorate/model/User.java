@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class User {
-    private int id;
+    private long id;
 
     @NotBlank(message = "User email should not be blank or null")
     @Email(message = "User email does not match the pattern")

@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @Builder
 public class Film {
-    private int id;
+    private long id;
 
     @NotBlank(message = "Film name should not be blank or null")
     private String name;
@@ -32,5 +32,5 @@ public class Film {
 
     private List<Genre> genres;
 
-    private int numLikes;
+    private long numLikes;
 }

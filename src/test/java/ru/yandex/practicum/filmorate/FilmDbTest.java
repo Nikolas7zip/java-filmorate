@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @SpringBootTest
@@ -37,21 +38,21 @@ public class FilmDbTest {
                 .duration(194)
                 .mpa(new MpaRating(3, "PG-13"))
                 .build();
-        int filmId = filmStorage.add(film);
+        long filmId = filmStorage.add(film);
         film.setId(filmId);
 
         // Act
-        Film filmFromStorage = filmStorage.getById(filmId);
+        Optional<Film> filmOptional = filmStorage.getById(filmId);
 
         // Assert
-        assertNotNull(filmFromStorage);
-        assertEquals(film, filmFromStorage);
+        assertTrue(filmOptional.isPresent());
+        assertEquals(film, filmOptional.get());
     }
 
     @Test
     public void testFilmNotFound() {
-        Film film = filmStorage.getById(-1);
-        assertNull(film);
+        Optional<Film> filmOptional = filmStorage.getById(-1);
+        assertTrue(filmOptional.isEmpty());
     }
 
     @Test
@@ -64,9 +65,11 @@ public class FilmDbTest {
 
         // Act
         filmStorage.update(film);
+        Optional<Film> filmOptional = filmStorage.getById(film.getId());
 
         // Assert
-        assertEquals(film, filmStorage.getById(film.getId()));
+        assertTrue(filmOptional.isPresent());
+        assertEquals(film, filmOptional.get());
     }
 
     @Test
@@ -75,7 +78,10 @@ public class FilmDbTest {
         User user = createTestUser();
 
         filmStorage.likeFilmByUser(film.getId(), user.getId());
-        assertEquals(1, filmStorage.getById(film.getId()).getNumLikes());
+        Optional<Film> filmOptional = filmStorage.getById(film.getId());
+
+        assertTrue(filmOptional.isPresent());
+        assertEquals(1, filmOptional.get().getNumLikes());
     }
 
     @Test
@@ -85,7 +91,10 @@ public class FilmDbTest {
 
         filmStorage.likeFilmByUser(film.getId(), user.getId());
         filmStorage.removeLikeFromFilmByUser(film.getId(), user.getId());
-        assertEquals(0, filmStorage.getById(film.getId()).getNumLikes());
+        Optional<Film> filmOptional = filmStorage.getById(film.getId());
+
+        assertTrue(filmOptional.isPresent());
+        assertEquals(0, filmOptional.get().getNumLikes());
     }
 
     @Test
@@ -120,7 +129,7 @@ public class FilmDbTest {
                 .duration(60 + numRandom)
                 .mpa(new MpaRating(3, "PG-13"))
                 .build();
-        int filmId = filmStorage.add(film);
+        long filmId = filmStorage.add(film);
         film.setId(filmId);
         return film;
     }
@@ -132,7 +141,7 @@ public class FilmDbTest {
                 .name("Tester1")
                 .birthday(LocalDate.of(1990, 1, 1))
                 .build();
-        int id = userDbStorage.add(user);
-        return userDbStorage.getById(id);
+        long userId = userDbStorage.add(user);
+        return userDbStorage.getById(userId).get();
     }
 }

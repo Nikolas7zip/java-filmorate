@@ -12,9 +12,7 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,18 +33,23 @@ public class FilmService {
 
     public List<Film> getAllFilms() {
         List<Film> films = filmStorage.getAll();
+        Map<Long, List<Genre>> filmsGenres = genreStorage.getGenresForAllFilms();
         for (Film film : films) {
-            film.setGenres(genreStorage.getFilmGenre(film.getId()));
+            Long filmId = film.getId();
+            if (filmsGenres.containsKey(filmId)) {
+                film.setGenres(filmsGenres.get(filmId));
+            }
         }
 
         return films;
     }
 
-    public Film getFilmById(int filmId) throws ResourceNotFoundException {
-        Film film = filmStorage.getById(filmId);
-        if (film == null) {
+    public Film getFilmById(long filmId) throws ResourceNotFoundException {
+        Optional<Film> filmOptional = filmStorage.getById(filmId);
+        if (filmOptional.isEmpty()) {
             throw new ResourceNotFoundException("Not found film with id " + filmId);
         }
+        Film film = filmOptional.get();
         film.setGenres(genreStorage.getFilmGenre(filmId));
 
         return film;
@@ -54,15 +57,21 @@ public class FilmService {
 
     public List<Film> getPopularFilms(int limitFilms) {
         List<Film> films = filmStorage.getPopularFilms(limitFilms);
+        Map<Long, List<Genre>> filmsGenres = genreStorage.getGenresForSpecificFilms(films.stream()
+                .map(Film::getId)
+                .collect(Collectors.toList()));
         for (Film film : films) {
-            film.setGenres(genreStorage.getFilmGenre(film.getId()));
+            Long filmId = film.getId();
+            if (filmsGenres.containsKey(filmId)) {
+                film.setGenres(filmsGenres.get(filmId));
+            }
         }
 
         return films;
     }
 
     public Film createFilm(Film film) {
-        int filmId = filmStorage.add(film);
+        long filmId = filmStorage.add(film);
         addFilmGenres(filmId, film.getGenres());
         Film filmFromStorage = getFilmById(filmId);
         log.info("Success create {}", filmFromStorage);
@@ -71,7 +80,7 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) throws ResourceNotFoundException {
-        if (filmStorage.getById(film.getId()) == null) {
+        if (filmStorage.getById(film.getId()).isEmpty()) {
             throw new ResourceNotFoundException("Not found film with id " + film.getId());
         }
         filmStorage.update(film);
@@ -82,7 +91,7 @@ public class FilmService {
         return filmFromStorage;
     }
 
-    public void likeFilmByUser(int filmId, int userId) throws ResourceNotFoundException, BadRequestException {
+    public void likeFilmByUser(long filmId, long userId) throws ResourceNotFoundException, BadRequestException {
         throwIfFilmOrUserNotFound(filmId, userId);
         boolean isFilmLiked = filmStorage.likeFilmByUser(filmId, userId);
         if (isFilmLiked) {
@@ -92,7 +101,7 @@ public class FilmService {
         }
     }
 
-    public void removeLikeFromFilmByUser(int filmId, int userId) throws ResourceNotFoundException, BadRequestException {
+    public void removeLikeFromFilmByUser(long filmId, long userId) throws ResourceNotFoundException, BadRequestException {
         throwIfFilmOrUserNotFound(filmId, userId);
         boolean isLikeRemoved = filmStorage.removeLikeFromFilmByUser(filmId, userId);
         if (isLikeRemoved) {
@@ -102,17 +111,17 @@ public class FilmService {
         }
     }
 
-    private void throwIfFilmOrUserNotFound(int filmId, int userId) throws ResourceNotFoundException {
-        if (filmStorage.getById(filmId) == null) {
+    private void throwIfFilmOrUserNotFound(long filmId, long userId) throws ResourceNotFoundException {
+        if (filmStorage.getById(filmId).isEmpty()) {
             throw new ResourceNotFoundException("Not found film with id " + filmId);
         }
 
-        if (userStorage.getById(userId) == null) {
+        if (userStorage.getById(userId).isEmpty()) {
             throw new ResourceNotFoundException("Not found user with id " + userId);
         }
     }
 
-    private void addFilmGenres(int filmId, List<Genre> genres) {
+    private void addFilmGenres(long filmId, List<Genre> genres) {
         if (genres != null) {
             Set<Genre> uniqueGenres = new HashSet<>(genres);
             for (Genre g : uniqueGenres) {
@@ -131,7 +140,7 @@ public class FilmService {
         }
     }
 
-    private void updateFilmGenres(int filmId, List<Genre> newGenres) {
+    private void updateFilmGenres(long filmId, List<Genre> newGenres) {
         Set<Integer> newGenresId = getGenresId(newGenres);
         Set<Integer> dbGenresId = getGenresId(genreStorage.getFilmGenre(filmId));
         for (Integer dbGenreId : dbGenresId) {

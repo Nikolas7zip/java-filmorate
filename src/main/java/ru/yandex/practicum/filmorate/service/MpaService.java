@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaRatingStorage;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MpaService {
@@ -22,11 +23,11 @@ public class MpaService {
     }
 
     public MpaRating getMpaById(int mpaId) throws ResourceNotFoundException {
-        MpaRating mpa = mpaRatingStorage.getById(mpaId);
-        if (mpa == null) {
+        Optional<MpaRating> mpaRatingOptional = mpaRatingStorage.getById(mpaId);
+        if (mpaRatingOptional.isEmpty()) {
             throw new ResourceNotFoundException("Not found mpa rating with id " + mpaId);
         }
 
-        return mpa;
+        return mpaRatingOptional.get();
     }
 }

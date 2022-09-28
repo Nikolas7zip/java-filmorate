@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,22 +31,22 @@ public class UserDbTest {
                 .name("IvanTester")
                 .birthday(LocalDate.of(1992, 5, 13))
                 .build();
-        int userId = userStorage.add(user);
+        long userId = userStorage.add(user);
         user.setId(userId);
 
         // Act
-        User userFromStorage = userStorage.getById(userId);
+        Optional<User> userOptional = userStorage.getById(userId);
 
         // Assert
-        assertNotNull(userFromStorage);
-        assertEquals(user, userFromStorage);
+        assertTrue(userOptional.isPresent());
+        assertEquals(user, userOptional.get());
     }
 
     @Test
     public void testUserNotFound() {
-        User user = userStorage.getById(-1);
+        Optional<User> userOptional = userStorage.getById(-1);
 
-        assertNull(user);
+        assertTrue(userOptional.isEmpty());
     }
 
     @Test
@@ -57,9 +58,11 @@ public class UserDbTest {
         user.setName("CoolTester");
         user.setLogin("CoolTester");
         userStorage.update(user);
+        Optional<User> userOptional =  userStorage.getById(user.getId());
 
         // Assert
-        assertEquals(user, userStorage.getById(user.getId()));
+        assertTrue(userOptional.isPresent());
+        assertEquals(user, userOptional.get());
     }
 
     @Test
@@ -133,7 +136,7 @@ public class UserDbTest {
                 .name("Tester" + randomNumber)
                 .birthday(LocalDate.of(1990, 1, 1))
                 .build();
-        int userId = userStorage.add(user);
+        long userId = userStorage.add(user);
         user.setId(userId);
         return user;
     }

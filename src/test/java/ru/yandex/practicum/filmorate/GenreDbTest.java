@@ -11,8 +11,10 @@ import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
 
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
@@ -23,8 +25,10 @@ public class GenreDbTest {
 
     @Test
     public void testGetGenreById() {
-        Genre genre = genreDbStorage.getById(1);
+        Optional<Genre> genreOptional = genreDbStorage.getById(1);
 
+        assertTrue(genreOptional.isPresent());
+        Genre genre = genreOptional.get();
         assertEquals(1, genre.getId());
         assertEquals("Комедия", genre.getName());
     }

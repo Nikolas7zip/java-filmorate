@@ -10,8 +10,10 @@ import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaRatingDbStorage;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
@@ -22,8 +24,10 @@ public class MpaRatingDbTest {
 
     @Test
     public void testGetMpaById() {
-        MpaRating mpa = mpaRatingDbStorage.getById(1);
+        Optional<MpaRating> mpaRatingOptional = mpaRatingDbStorage.getById(1);
 
+        assertTrue(mpaRatingOptional.isPresent());
+        MpaRating mpa = mpaRatingOptional.get();
         assertEquals(1, mpa.getId());
         assertEquals("G", mpa.getName());
     }

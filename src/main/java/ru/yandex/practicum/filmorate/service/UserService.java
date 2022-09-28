@@ -25,18 +25,18 @@ public class UserService {
         return userStorage.getAll();
     }
 
-    public User getUserById(int userId) throws ResourceNotFoundException {
-        User user = userStorage.getById(userId);
-        if (user == null) {
+    public User getUserById(long userId) throws ResourceNotFoundException {
+        Optional<User> userOptional = userStorage.getById(userId);
+        if (userOptional.isEmpty()) {
             throw new ResourceNotFoundException("Not found user with id " + userId);
         }
 
-        return user;
+        return userOptional.get();
     }
 
     public User createUser(User user) {
         changeBlankNameToLogin(user);
-        int userId = userStorage.add(user);
+        long userId = userStorage.add(user);
         User userFromStorage = getUserById(userId);
         log.info("Success create {}", userFromStorage);
 
@@ -53,13 +53,13 @@ public class UserService {
         return userFromStorage;
     }
 
-    public List<User> getFriends(int userId) throws ResourceNotFoundException {
+    public List<User> getFriends(long userId) throws ResourceNotFoundException {
         throwIfUserNotFound(userId);
 
         return userStorage.getFriends(userId);
     }
 
-    public void addToFriends(int userId, int friendId)
+    public void addToFriends(long userId, long friendId)
             throws ResourceNotFoundException, BadRequestException {
         throwIfUserIdsAreEqual(userId, friendId);
         throwIfUserNotFound(userId);
@@ -72,7 +72,7 @@ public class UserService {
         }
     }
 
-    public void removeFromFriends(int userId, int friendId)
+    public void removeFromFriends(long userId, long friendId)
             throws ResourceNotFoundException, BadRequestException {
         throwIfUserIdsAreEqual(userId, friendId);
         throwIfUserNotFound(userId);
@@ -85,7 +85,7 @@ public class UserService {
         }
     }
 
-    public List<User> findCommonFriendsBetweenTwoUsers(int user1Id, int user2Id)
+    public List<User> findCommonFriendsBetweenTwoUsers(long user1Id, long user2Id)
             throws ResourceNotFoundException {
         throwIfUserIdsAreEqual(user1Id, user2Id);
         throwIfUserNotFound(user1Id);
@@ -100,13 +100,13 @@ public class UserService {
         }
     }
 
-    private void throwIfUserNotFound(int userId) throws ResourceNotFoundException {
-        if (userStorage.getById(userId) == null) {
+    private void throwIfUserNotFound(long userId) throws ResourceNotFoundException {
+        if (userStorage.getById(userId).isEmpty()) {
             throw new ResourceNotFoundException("Not found user with id " + userId);
         }
     }
 
-    private void throwIfUserIdsAreEqual(int user1Id, int user2Id) throws BadRequestException {
+    private void throwIfUserIdsAreEqual(long user1Id, long user2Id) throws BadRequestException {
         if (user1Id == user2Id) {
             throw new BadRequestException("User ids are equal");
         }

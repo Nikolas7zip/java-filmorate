@@ -6,7 +6,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
@@ -15,9 +15,10 @@ import java.sql.Statement;
 import java.util.List;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 
-@Component("userDbStorage")
+@Repository("userDbStorage")
 @Slf4j
 public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbcTemplate;
@@ -35,19 +36,19 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public User getById(int id) {
+    public Optional<User> getById(long id) {
         String sql = "SELECT * FROM app_user WHERE id = ?";
         try {
-            return jdbcTemplate.queryForObject(sql, this::mapRowToUser, id);
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapRowToUser, id));
         } catch (DataAccessException ex) {
             log.warn(ex.toString());
             log.warn("DB app_user: Don't found user id=" + id);
-            return null;
+            return Optional.empty();
         }
     }
 
     @Override
-    public int add(User user) {
+    public long add(User user) {
         String sql = "INSERT INTO app_user(email, login, name, birthday) VALUES (?, ?, ?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -60,7 +61,7 @@ public class UserDbStorage implements UserStorage {
             return pst;
         }, keyHolder);
 
-        return keyHolder.getKey().intValue();
+        return keyHolder.getKey().longValue();
     }
 
     @Override
@@ -77,7 +78,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public boolean addToFriends(int userId, int friendId) {
+    public boolean addToFriends(long userId, long friendId) {
         String sql = "INSERT INTO user_friend (user_id, friend_id) VALUES (?, ?)";
 
         try {
@@ -91,7 +92,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public boolean removeFromFriends(int userId, int friendId) {
+    public boolean removeFromFriends(long userId, long friendId) {
         String sql = "DELETE FROM user_friend WHERE user_id = ? AND friend_id = ?";
 
         try {
@@ -105,14 +106,14 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public List<User> getFriends(int userId) {
+    public List<User> getFriends(long userId) {
         String sql = "SELECT * FROM app_user WHERE id IN (SELECT friend_id FROM user_friend WHERE user_id = ?)";
 
         return jdbcTemplate.query(sql, this::mapRowToUser, userId);
     }
 
     @Override
-    public List<User> getCommonFriends(int user1Id, int user2Id) {
+    public List<User> getCommonFriends(long user1Id, long user2Id) {
         String sql = "SELECT * FROM app_user WHERE id IN " +
                 "(SELECT friend_id FROM user_friend WHERE user_id = ? OR user_id = ? " +
                 "GROUP BY friend_id HAVING COUNT(*) > 1)";
@@ -122,7 +123,7 @@ public class UserDbStorage implements UserStorage {
 
     private User mapRowToUser(ResultSet resultSet, int rowNum) throws SQLException {
         return User.builder()
-                .id(resultSet.getInt("id"))
+                .id(resultSet.getLong("id"))
                 .email(resultSet.getString("email"))
                 .login(resultSet.getString("login"))
                 .name(resultSet.getString("name"))

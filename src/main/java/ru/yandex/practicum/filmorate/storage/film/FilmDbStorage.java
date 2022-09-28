@@ -6,14 +6,15 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import java.sql.*;
 import java.util.List;
+import java.util.Optional;
 
-@Component("filmDbStorage")
+@Repository("filmDbStorage")
 @Slf4j
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
@@ -36,7 +37,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Film getById(int id) {
+    public Optional<Film> getById(long id) {
         String sql = "SELECT film.*, mpa.name AS mpa_name,  " +
                              "(SELECT COUNT(*) FROM film_like " +
                              "WHERE film_like.film_id = film.id " +
@@ -45,11 +46,11 @@ public class FilmDbStorage implements FilmStorage {
                      "LEFT JOIN mpa_rating AS mpa ON film.mpa_id = mpa.id " +
                      "WHERE film.id = ?";
         try {
-            return jdbcTemplate.queryForObject(sql, this::mapRowToFilm, id);
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapRowToFilm, id));
         } catch (DataAccessException ex) {
             log.warn(ex.toString());
             log.warn("DB film: Don't found film id=" + id);
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -68,7 +69,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public int add(Film film) {
+    public long add(Film film) {
         String sql = "INSERT INTO film(name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -82,7 +83,7 @@ public class FilmDbStorage implements FilmStorage {
             return pst;
         }, keyHolder);
 
-        return keyHolder.getKey().intValue();
+        return keyHolder.getKey().longValue();
     }
 
     @Override
@@ -100,7 +101,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public boolean likeFilmByUser(int filmId, int userId) {
+    public boolean likeFilmByUser(long filmId, long userId) {
         String sql = "INSERT INTO film_like (film_id, user_id) VALUES (?, ?)";
 
         try {
@@ -114,7 +115,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public boolean removeLikeFromFilmByUser(int filmId, int userId) {
+    public boolean removeLikeFromFilmByUser(long filmId, long userId) {
         String sql = "DELETE FROM film_like WHERE film_id = ? AND user_id = ?";
 
         try {
@@ -129,17 +130,13 @@ public class FilmDbStorage implements FilmStorage {
 
     private Film mapRowToFilm(ResultSet resultSet, int rowNum) throws SQLException {
         return Film.builder()
-                .id(resultSet.getInt("id"))
+                .id(resultSet.getLong("id"))
                 .name(resultSet.getString("name"))
                 .description(resultSet.getString("description"))
                 .releaseDate(resultSet.getDate("release_date").toLocalDate())
                 .duration(resultSet.getInt("duration"))
-                .numLikes(resultSet.getInt("num_likes"))
+                .numLikes(resultSet.getLong("num_likes"))
                 .mpa(new MpaRating(resultSet.getInt("mpa_id"), resultSet.getString("mpa_name")))
                 .build();
     }
-
-
-
-//    INSERT INTO FILM_GENRE (film_id, genre_id) VALUES ( 1, 2 ), (1, 4), (1, 6);
 }

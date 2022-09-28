@@ -3,14 +3,16 @@ package ru.yandex.practicum.filmorate.storage.genre;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
-@Component
+@Repository
 @Slf4j
 public class GenreDbStorage implements GenreStorage{
     private final JdbcTemplate jdbcTemplate;
@@ -27,20 +29,44 @@ public class GenreDbStorage implements GenreStorage{
     }
 
     @Override
-    public Genre getById(int id) {
+    public Optional<Genre> getById(int id) {
         String sql = "SELECT * FROM genre WHERE id = ?";
 
         try {
-            return jdbcTemplate.queryForObject(sql, this::mapRowToGenre, id);
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapRowToGenre, id));
         } catch (DataAccessException ex) {
             log.warn(ex.toString());
             log.warn("DB genre: Don't found genre id=" + id);
-            return null;
+            return Optional.empty();
         }
     }
 
     @Override
-    public List<Genre> getFilmGenre(int filmId) {
+    public Map<Long, List<Genre>> getGenresForAllFilms() {
+        String sql = "SELECT fg.film_id, fg.genre_id, g.name " +
+                     "FROM film_genre AS fg " +
+                     "INNER JOIN genre AS g on g.id = fg.genre_id";
+
+        SqlRowSet resultSet = jdbcTemplate.queryForRowSet(sql);
+
+        return rowsToFilmGenres(resultSet);
+    }
+
+    @Override
+    public Map<Long, List<Genre>> getGenresForSpecificFilms(List<Long> filmsId) {
+        String inParams = filmsId.stream().map(id -> "?").collect(Collectors.joining(","));;
+
+        String sql = "SELECT fg.film_id, fg.genre_id, g.name " +
+                "FROM film_genre AS fg " +
+                "INNER JOIN genre AS g on g.id = fg.genre_id " +
+                "WHERE fg.film_id IN (" + inParams + ")";
+        SqlRowSet resultSet = jdbcTemplate.queryForRowSet(sql, filmsId.toArray());
+
+        return rowsToFilmGenres(resultSet);
+    }
+
+    @Override
+    public List<Genre> getFilmGenre(long filmId) {
         String sql = "SELECT g.id, g.name " +
                 "FROM film_genre AS fg " +
                 "INNER JOIN genre AS g on g.id = fg.genre_id " +
@@ -50,7 +76,7 @@ public class GenreDbStorage implements GenreStorage{
     }
 
     @Override
-    public boolean addGenreForFilm(int genreId, int filmId) {
+    public boolean addGenreForFilm(int genreId, long filmId) {
         String sql = "INSERT INTO film_genre (film_id, genre_id) VALUES (?, ?)";
 
         try {
@@ -64,7 +90,7 @@ public class GenreDbStorage implements GenreStorage{
     }
 
     @Override
-    public boolean removeGenreForFilm(int genreId, int filmId) {
+    public boolean removeGenreForFilm(int genreId, long filmId) {
         String sql = "DELETE FROM film_genre WHERE film_id = ? AND genre_id = ?";
 
         try {
@@ -75,6 +101,22 @@ public class GenreDbStorage implements GenreStorage{
             log.warn("DB film_genre: fail delete genre_id=" + genreId + ", film_id=" + filmId);
             return false;
         }
+    }
+
+    private Map<Long, List<Genre>> rowsToFilmGenres(SqlRowSet resultSet) {
+        Map<Long, List<Genre>> filmsGenres = new HashMap<>();
+        while (resultSet.next()) {
+            Long filmId = resultSet.getLong("film_id");
+            Genre genre = new Genre(resultSet.getInt("genre_id"), resultSet.getString("name"));
+            if (filmsGenres.containsKey(filmId)) {
+                filmsGenres.get(filmId).add(genre);
+            } else {
+                List<Genre> genres = new ArrayList<>();
+                genres.add(genre);
+                filmsGenres.put(filmId, genres);
+            }
+        }
+        return filmsGenres;
     }
 
     private Genre mapRowToGenre(ResultSet resultSet, int rowNum) throws SQLException {
