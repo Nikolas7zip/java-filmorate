@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import lombok.Builder;
 import lombok.Data;
 import ru.yandex.practicum.filmorate.validation.UserLogin;
 
@@ -8,11 +9,11 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PastOrPresent;
 import java.time.LocalDate;
-import java.util.Set;
 
 @Data
+@Builder
 public class User {
-    private int id;
+    private long id;
 
     @NotBlank(message = "User email should not be blank or null")
     @Email(message = "User email does not match the pattern")
@@ -27,6 +28,4 @@ public class User {
     @NotNull(message = "User birthday should not null")
     @PastOrPresent(message = "User birthday should not be in future")
     private LocalDate birthday;
-
-    private Set<Integer> friends;
 }

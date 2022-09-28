@@ -1,15 +1,17 @@
 package ru.yandex.practicum.filmorate.model;
 
-import ru.yandex.practicum.filmorate.validation.FilmDate;
+import lombok.Builder;
 import lombok.Data;
+import ru.yandex.practicum.filmorate.validation.FilmDate;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
-import java.util.Set;
+import java.util.List;
 
 @Data
+@Builder
 public class Film {
-    private int id;
+    private long id;
 
     @NotBlank(message = "Film name should not be blank or null")
     private String name;
@@ -25,5 +27,10 @@ public class Film {
     @Positive(message = "Film duration should be positive")
     private int duration;
 
-    private Set<Integer> userLikes;
+    @NotNull(message = "MPA rating should not be null")
+    private MpaRating mpa;
+
+    private List<Genre> genres;
+
+    private long numLikes;
 }
